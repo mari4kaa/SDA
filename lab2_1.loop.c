@@ -15,8 +15,9 @@ int main()
     printf("Input your N: ");
     scanf_s("%u", &n);
 
-    // int p = x / (2. * M_PI);
-    // x -= 2. * M_PI * p;
+    //Usage of periodic property to calculate sin(x) correctly with any x
+    int p = x / (2. * M_PI);
+    x -= 2. * M_PI * p;
     double res = calculateSinLoop(x, n);
     printf("With loop sin of %lf is %.10lf\n", x, res);
 }
