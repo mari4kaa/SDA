@@ -27,8 +27,8 @@ double wrappedSin(double x, unsigned int n)
     {
         printf("N must be greater than 0");
     }
-    int p = x / (2. * M_PI);
-    x -= 2. * M_PI * p;
+    // int p = x / (2. * M_PI);
+    // x -= 2. * M_PI * p;
     calculateSin2(x, n - 1, &sum);
     return sum;
 }
