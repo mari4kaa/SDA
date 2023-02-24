@@ -27,8 +27,9 @@ double wrappedSin(double x, unsigned int n)
     {
         printf("N must be greater than 0");
     }
-    // int p = x / (2. * M_PI);
-    // x -= 2. * M_PI * p;
+    //Usage of periodic property to calculate sin(x) correctly with any x
+    int p = x / (2. * M_PI);
+    x -= 2. * M_PI * p;
     calculateSin2(x, n - 1, &sum);
     return sum;
 }
