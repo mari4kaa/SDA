@@ -16,9 +16,14 @@ l_list *sort(l_list *l_p);
 
 int main()
 {
-    unsigned int n;
+    int n;
     printf("Input number of items: ");
     scanf_s("%u", &n);
+    if (n <= 0)
+    {
+        printf("n must be greater than 0");
+        return;
+    }
     //create list
     char first_letter = random_letter();
     l_list *list_p = l_list_init(first_letter);
