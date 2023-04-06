@@ -1,4 +1,3 @@
-﻿//DON'T FORGET TO CHECK LEAKS!!!!
 #include<stdio.h>
 #include<stdlib.h>
 #include<windows.h>
@@ -332,7 +331,6 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     SetWorldTransform(hdc, &baseForm);
 }
 
-//FIX POINTERS
 double** randm(int rows, int columns)
 {
     srand(2111);
