@@ -6,16 +6,8 @@
 #define IDC_BUTTON 3456
 #define IDC_BUTTON2 3457
 #define vertexes 11
-#define n3 1.0
-#define n4 1.0
-
-double** randm(int rows, int columns);
-double** mulmr(double k, double** matrix, int rows, int columns);
-double** symetricm(double** matrix, int rows, int columns);
-void free_all(double** matrix, int rows);
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-char ProgName[] = "Lab 3";
 void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** A, 
                       HPEN KPen, HPEN PPen, HDC hdc);
 void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** B, 
@@ -24,6 +16,13 @@ void arrow(double fi, double px, double py, HDC hdc);
 void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc);
 void print_mrand(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
 void print_symetricm(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
+
+double** randm(int rows, int columns);
+double** mulmr(double k, double** matrix, int rows, int columns);
+double** symetricm(double** matrix, int rows, int columns);
+void free_all(double** matrix, int rows);
+
+char ProgName[] = "Lab 3";
 
 struct coords
 {
@@ -154,7 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         
         //PRINT RANDOM MATRIX
         double** T = randm(vertexes, vertexes);
-        double coef = 1.0 - n3 * 0.02 - n4 * 0.005 - 0.25;
+        double coef = 1.0 - 0.02 - 0.005 - 0.25;
         double** A = mulmr(coef, T, vertexes, vertexes);
         int startX_rm = 700;
         int startY_rm = 200;
