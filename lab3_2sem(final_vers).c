@@ -311,7 +311,7 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     double a = k * length;
     double b = length / 2;
     double ellipse_y0 = b;
-    double component = b * sqrt(pow(b * vertex_rad, 2) - pow(a * b, 2) + pow(a * ellipse_y0, 2) - pow(a * vertex_rad, 2) + pow(a, 4));
+    double component = b * sqrt(b*b*vertex_rad*vertex_rad - a*a*b*b + a*a*ellipse_y0*ellipse_y0 - a*a*vertex_rad*vertex_rad + pow(a, 4));
     double contact_y1 = (a * a * ellipse_y0 - component) / (-b * b + a * a);
     double contact_x1 = sqrt(vertex_rad * vertex_rad - contact_y1 * contact_y1);
     double contact_y2 = length - contact_y1;
