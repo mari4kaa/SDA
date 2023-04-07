@@ -315,7 +315,7 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     double contact_x1 = sqrt(vertex_rad * vertex_rad - contact_y1 * contact_y1);
     double contact_y2 = length - contact_y1;
     double contact_x2 = -contact_x1;
-    if (distance < 6)
+    if (distance <= vertexes/2)
     {
         Arc(hdc, -k * length, length, k * length, 0, 0, 0, 0, length);
         double arrow_angle = -atan2(length - contact_y2, contact_x2) + 0.3 / 2;
