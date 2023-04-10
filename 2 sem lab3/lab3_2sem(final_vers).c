@@ -8,9 +8,9 @@
 #define vertexes 11
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** A, 
+void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
                       HPEN KPen, HPEN PPen, HDC hdc);
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** B, 
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** B,
                         HPEN KPen, HPEN PPen, HDC hdc);
 void arrow(double fi, double px, double py, HDC hdc);
 void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc);
@@ -28,6 +28,8 @@ struct coords
 {
     double nx[vertexes];
     double ny[vertexes];
+    double loop_X[vertexes];
+    double loop_Y[vertexes];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -139,16 +141,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         struct coords coords;
         double rad = 200;
         double vertex_rad = rad / 10;
+        double loop_rad = vertex_rad;
         double dtx = vertex_rad / 2.5;
         double centerX = 350;
         double centerY = 350;
         double angle = 2.0 * M_PI / (double)vertexes;
         for (int i = 0; i < vertexes; i++)
         {
-            double a = rad * sin(angle * (double)i);
-            double b = rad * cos(angle * (double)i);
-            coords.nx[i] = centerX + a;
-            coords.ny[i] = centerY - b;
+            double sin_angle = sin(angle * (double)i);
+            double cos_angle = cos(angle * (double)i);
+            coords.nx[i] = centerX + rad * sin_angle;
+            coords.ny[i] = centerY - rad * cos_angle;
+            coords.loop_X[i] = centerX + (rad + loop_rad) * sin_angle;
+            coords.loop_Y[i] = centerY - (rad + loop_rad) * cos_angle;
         }
         
         //PRINT RANDOM MATRIX
@@ -171,11 +176,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         SelectObject(hdc, KPen);
         if (flag == 0)
         {
-            draw_directgraph(centerX, centerY, rad, vertex_rad, angle, coords, A, KPen, PPen, hdc);
+            draw_directgraph(centerX, centerY, rad, vertex_rad, loop_rad, angle, coords, A, KPen, PPen, hdc);
         }
         else
         {
-            draw_undirectgraph(centerX, centerY, rad, vertex_rad, angle, coords, B, KPen, PPen, hdc);
+            draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, angle, coords, B, KPen, PPen, hdc);
         }
 
         //draw vertexes
@@ -203,7 +208,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** A,
+void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
                       HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertexes; i++)
@@ -217,10 +222,7 @@ void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, double 
                 {
                     SelectObject(hdc, PPen);
                     //draw loops
-                    double loop_rad = vertex_rad;
-                    double loop_X = centerX + (rad + loop_rad) * sin(angle * (double)i);
-                    double loop_Y = centerY - (rad + loop_rad) * cos(angle * (double)i);
-                    Ellipse(hdc, loop_X - loop_rad, loop_Y - loop_rad, loop_X + loop_rad, loop_Y + loop_rad);
+                    Ellipse(hdc, coords.loop_X[i] - loop_rad, coords.loop_Y[i] - loop_rad, coords.loop_X[i] + loop_rad, coords.loop_Y[i] + loop_rad);
 
                     //draw arrows for loops
                     double r = rad + loop_rad / 2.;
@@ -250,7 +252,7 @@ void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, double 
     }
 }
 
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, double angle, struct coords coords, double** B, 
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** B,
                         HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertexes; i++)
@@ -264,10 +266,7 @@ void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, doubl
                 {
                     //draw loops
                     SelectObject(hdc, PPen);
-                    double loop_rad = vertex_rad;
-                    double loop_X = centerX + (rad + loop_rad) * sin(angle * (double)i);
-                    double loop_Y = centerY - (rad + loop_rad) * cos(angle * (double)i);
-                    Ellipse(hdc, loop_X - loop_rad, loop_Y - loop_rad, loop_X + loop_rad, loop_Y + loop_rad);
+                    Ellipse(hdc, coords.loop_X[i] - loop_rad, coords.loop_Y[i] - loop_rad, coords.loop_X[i] + loop_rad, coords.loop_Y[i] + loop_rad);
                     SelectObject(hdc, KPen);
                 }
                 else
