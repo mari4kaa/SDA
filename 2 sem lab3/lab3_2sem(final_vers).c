@@ -349,6 +349,7 @@ double** mulmr(double k, double** matrix, int rows, int columns)
 {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < columns; j++) {
+            matrix[i][j] = matrix[i][j] * k;
             if (matrix[i][j] < 1)
             {
                 matrix[i][j] = 0;
