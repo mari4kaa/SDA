@@ -5,7 +5,7 @@
 #include<math.h>
 #define IDC_BUTTON 3456
 #define IDC_BUTTON2 3457
-#define vertexes 11
+#define vertices 11
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
@@ -26,10 +26,10 @@ char ProgName[] = "Lab 3";
 
 struct coords
 {
-    double nx[vertexes];
-    double ny[vertexes];
-    double loop_X[vertexes];
-    double loop_Y[vertexes];
+    double nx[vertices];
+    double ny[vertices];
+    double loop_X[vertices];
+    double loop_Y[vertices];
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
@@ -136,7 +136,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         SelectObject(hdc, NoPen);
         Rectangle(hdc, 0, 0, 670, 700);
 
-        wchar_t* nn[vertexes] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11"};
+        wchar_t* nn[vertices] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11"};
         //set parameters of the graph
         struct coords coords;
         double rad = 200;
@@ -145,8 +145,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double dtx = vertex_rad / 2.5;
         double centerX = 350;
         double centerY = 350;
-        double angle = 2.0 * M_PI / (double)vertexes;
-        for (int i = 0; i < vertexes; i++)
+        double angle = 2.0 * M_PI / (double)vertices;
+        for (int i = 0; i < vertices; i++)
         {
             double sin_angle = sin(angle * (double)i);
             double cos_angle = cos(angle * (double)i);
@@ -157,19 +157,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         }
         
         //PRINT RANDOM MATRIX
-        double** T = randm(vertexes, vertexes);
+        double** T = randm(vertices, vertices);
         double coef = 1.0 - 0.02 - 0.005 - 0.25;
-        double** A = mulmr(coef, T, vertexes, vertexes);
+        double** A = mulmr(coef, T, vertices, vertices);
         int startX_rm = 700;
         int startY_rm = 200;
-        print_mrand(A, vertexes, vertexes, startX_rm, startY_rm, hdc);
+        print_mrand(A, vertices, vertices, startX_rm, startY_rm, hdc);
 
         //PRINT SYMETRIC MATRIX
-        double** T2 = randm(vertexes, vertexes);
-        double** B = symetricm(mulmr(coef, T2, vertexes, vertexes), vertexes, vertexes);
+        double** T2 = randm(vertices, vertices);
+        double** B = symetricm(mulmr(coef, T2, vertices, vertices), vertices, vertices);
         int startX_sm = startX_rm;
         int startY_sm = startY_rm + 200;
-        print_symetricm(B, vertexes, vertexes, startX_sm, startY_sm, hdc);
+        print_symetricm(B, vertices, vertices, startX_sm, startY_sm, hdc);
 
         //DRAW GRAPH
         SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
@@ -183,19 +183,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, angle, coords, B, KPen, PPen, hdc);
         }
 
-        //draw vertexes
+        //draw vertices
         SelectObject(hdc, BPen);
         SelectObject(hdc, GetStockObject(DC_BRUSH));
         SetDCBrushColor(hdc, RGB(204, 204, 255));
         SetBkMode(hdc, TRANSPARENT);
-        for (int i = 0; i < vertexes; i++) {
+        for (int i = 0; i < vertices; i++) {
             Ellipse(hdc, coords.nx[i] - vertex_rad, coords.ny[i] - vertex_rad, coords.nx[i] + vertex_rad, coords.ny[i] + vertex_rad);
             TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, nn[i], 2);
         }
 
         EndPaint(hWnd, &ps);
-        free_all(A, vertexes);
-        free_all(B, vertexes);
+        free_all(A, vertices);
+        free_all(B, vertices);
         break;
 
     case WM_DESTROY:
@@ -211,9 +211,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
                       HPEN KPen, HPEN PPen, HDC hdc)
 {
-    for (int i = 0; i < vertexes; i++)
+    for (int i = 0; i < vertices; i++)
     {
-        for (int j = 0; j < vertexes; j++)
+        for (int j = 0; j < vertices; j++)
         {
             MoveToEx(hdc, coords.nx[i], coords.ny[i], NULL);
             if ((j >= i && A[i][j] == 1) || (j <= i && A[i][j] == 1 && A[j][i] == 0))
@@ -255,9 +255,9 @@ void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loo
 void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** B,
                         HPEN KPen, HPEN PPen, HDC hdc)
 {
-    for (int i = 0; i < vertexes; i++)
+    for (int i = 0; i < vertices; i++)
     {
-        for (int j = 0; j < vertexes; j++)
+        for (int j = 0; j < vertices; j++)
         {
             MoveToEx(hdc, coords.nx[i], coords.ny[i], NULL);
             if (B[i][j] == 1)
@@ -314,7 +314,7 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     double contact_x1 = sqrt(vertex_rad * vertex_rad - contact_y1 * contact_y1);
     double contact_y2 = length - contact_y1;
     double contact_x2 = -contact_x1;
-    if (distance <= vertexes/2)
+    if (distance <= vertices/2)
     {
         Arc(hdc, -k * length, length, k * length, 0, 0, 0, 0, length);
         double arrow_angle = -atan2(length - contact_y2, contact_x2) + 0.3 / 2;
@@ -406,9 +406,9 @@ void print_symetricm(double** matrix, int rows, int columns, int startX, int sta
     wchar_t buffer2[16];
     swprintf(buffer2, 16, L"Symetric matrix");
     TextOut(hdc, startX, startY, buffer2, 15);
-    for (int i = 0, y = startY + 20; i < vertexes; i++, y += 15)
+    for (int i = 0, y = startY + 20; i < vertices; i++, y += 15)
     {
-        for (int j = 0, x = startX; j < vertexes; j++, x += 15)
+        for (int j = 0, x = startX; j < vertices; j++, x += 15)
         {
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%lf", matrix[i][j]);
