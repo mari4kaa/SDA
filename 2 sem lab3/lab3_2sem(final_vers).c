@@ -14,8 +14,7 @@ void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int l
                         HPEN KPen, HPEN PPen, HDC hdc);
 void arrow(double fi, double px, double py, HDC hdc);
 void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc);
-void print_mrand(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
-void print_symetricm(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
+void print_matrix(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
 
 double** randm(int rows, int columns);
 double** mulmr(double k, double** matrix, int rows, int columns);
@@ -162,14 +161,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** A = mulmr(coef, T, vertices, vertices);
         int startX_rm = 700;
         int startY_rm = 200;
-        print_mrand(A, vertices, vertices, startX_rm, startY_rm, hdc);
+        wchar_t buffer1[15];
+        swprintf(buffer1, 15, L"Random matrix");
+        TextOut(hdc, startX_rm, startY_rm, buffer1, 13);
+        print_matrix(A, vertices, vertices, startX_rm, startY_rm, hdc);
 
         //PRINT SYMETRIC MATRIX
         double** T2 = randm(vertices, vertices);
         double** B = symetricm(mulmr(coef, T2, vertices, vertices), vertices, vertices);
         int startX_sm = startX_rm;
         int startY_sm = startY_rm + 200;
-        print_symetricm(B, vertices, vertices, startX_sm, startY_sm, hdc);
+        wchar_t buffer2[16];
+        swprintf(buffer2, 16, L"Symetric matrix");
+        TextOut(hdc, startX_sm, startY_sm, buffer2, 15);
+        print_matrix(B, vertices, vertices, startX_sm, startY_sm, hdc);
 
         //DRAW GRAPH
         SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
@@ -384,31 +389,11 @@ void free_all(double** matrix, int rows)
     free(matrix);
 }
 
-void print_mrand(double** matrix, int rows, int columns, int startX, int startY, HDC hdc)
+void print_matrix(double** matrix, int rows, int columns, int startX, int startY, HDC hdc)
 {
-    wchar_t buffer1[15];
-    swprintf(buffer1, 15, L"Random matrix");
-    TextOut(hdc, startX, startY, buffer1, 13);
     for (int i = 0, y = startY + 20; i < rows; i++, y += 15)
     {
         for (int j = 0, x = startX; j < columns; j++, x += 15)
-        {
-            wchar_t buffer[2];
-            swprintf(buffer, 2, L"%lf", matrix[i][j]);
-            TextOut(hdc, x, y, buffer, 1);
-        }
-        MoveToEx(hdc, startX, y, NULL);
-    }
-}
-
-void print_symetricm(double** matrix, int rows, int columns, int startX, int startY, HDC hdc)
-{
-    wchar_t buffer2[16];
-    swprintf(buffer2, 16, L"Symetric matrix");
-    TextOut(hdc, startX, startY, buffer2, 15);
-    for (int i = 0, y = startY + 20; i < vertices; i++, y += 15)
-    {
-        for (int j = 0, x = startX; j < vertices; j++, x += 15)
         {
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%lf", matrix[i][j]);
