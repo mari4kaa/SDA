@@ -161,9 +161,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** A = mulmr(coef, T, vertices, vertices);
         int startX_rm = 700;
         int startY_rm = 200;
-        wchar_t buffer1[15];
-        swprintf(buffer1, 15, L"Random matrix");
-        TextOut(hdc, startX_rm, startY_rm, buffer1, 13);
+        TextOut(hdc, startX_rm, startY_rm, L"Random matrix", 13);
         print_matrix(A, vertices, vertices, startX_rm, startY_rm, hdc);
 
         //PRINT SYMETRIC MATRIX
@@ -171,9 +169,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** B = symetricm(mulmr(coef, T2, vertices, vertices), vertices, vertices);
         int startX_sm = startX_rm;
         int startY_sm = startY_rm + 200;
-        wchar_t buffer2[16];
-        swprintf(buffer2, 16, L"Symetric matrix");
-        TextOut(hdc, startX_sm, startY_sm, buffer2, 15);
+        TextOut(hdc, startX_sm, startY_sm, L"Symetric matrix", 15);
         print_matrix(B, vertices, vertices, startX_sm, startY_sm, hdc);
 
         //DRAW GRAPH
