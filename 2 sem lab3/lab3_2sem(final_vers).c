@@ -8,9 +8,9 @@
 #define vertices 11
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
+void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A,
                       HPEN KPen, HPEN PPen, HDC hdc);
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** B,
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** B,
                         HPEN KPen, HPEN PPen, HDC hdc);
 void arrow(double fi, double px, double py, HDC hdc);
 void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc);
@@ -177,11 +177,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         SelectObject(hdc, KPen);
         if (flag == 0)
         {
-            draw_directgraph(centerX, centerY, rad, vertex_rad, loop_rad, angle, coords, A, KPen, PPen, hdc);
+            draw_directgraph(centerX, centerY, rad, vertex_rad, loop_rad, coords, A, KPen, PPen, hdc);
         }
         else
         {
-            draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, angle, coords, B, KPen, PPen, hdc);
+            draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, coords, B, KPen, PPen, hdc);
         }
 
         //draw vertices
@@ -209,7 +209,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** A,
+void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A,
                       HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertices; i++)
@@ -253,7 +253,7 @@ void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loo
     }
 }
 
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, double angle, struct coords coords, double** B,
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** B,
                         HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertices; i++)
@@ -397,4 +397,5 @@ void print_matrix(double** matrix, int rows, int columns, int startX, int startY
         }
         MoveToEx(hdc, startX, y, NULL);
     }
+
 }
