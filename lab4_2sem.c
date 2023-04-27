@@ -44,13 +44,11 @@ void print_paths_3(double** paths3, double** matrix, int rows, int columns);
 
 void draw_condens_graph(int components_num, double** C, int vertex_rad, double dtx, struct coords coords, HPEN BPen, HDC hdc);
 void dfs(int vertex, double** matrix, int* visited, int* stack, int* v);
-void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels);
-int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v);
+void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels, int x, int y, HDC hdc);
+int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, HDC hdc);
 void fill_condensed_matrix(double** matrix, double** condensed_matrix, int* component_labels);
 int find_components(int* visited, double** matrix, double** transposed_matrix, double** condensed_matrix,
-                     int* stack, int* component_labels, int v);
-
-char ProgName[] = "Lab 4";
+                     int* stack, int* component_labels, int v, HDC hdc);
 
 struct coords
 {
@@ -67,7 +65,7 @@ struct coords
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
     WNDCLASS w;
-    w.lpszClassName = ProgName;
+    w.lpszClassName = L"Lab 4";
     w.hInstance = hInstance;
     w.lpfnWndProc = WndProc;
     w.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -83,7 +81,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     }
     HWND hWnd;
     MSG lpMsg;
-    hWnd = CreateWindow(ProgName,
+    hWnd = CreateWindow(L"Lab 4",
         L"Lab 4. Made by Mariia Kryvokhata",
         WS_OVERLAPPEDWINDOW,
         100,
@@ -206,12 +204,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 
         //set parameters of the graph
         struct coords coords;
-        double rad = 200;
+        const double rad = 200;
+        double powers_rad = rad;
         double vertex_rad = rad / 10;
         double loop_rad = vertex_rad;
         double dtx = vertex_rad / 2.5;
-        double centerX = 350;
-        double centerY = 350;
+        const double centerX = 350;
+        const double centerY = 350;
         double angle = 2.0 * M_PI / (double)vertices;
         for (int i = 0; i < vertices; i++)
         {
@@ -221,8 +220,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             coords.ny[i] = centerY - rad * cos_angle;
             coords.loop_X[i] = centerX + (rad + loop_rad) * sin_angle;
             coords.loop_Y[i] = centerY - (rad + loop_rad) * cos_angle;
-            coords.power_x[i] = centerX + (rad + 50) * sin_angle;
-            coords.power_y[i] = centerY - (rad + 50) * cos_angle;
+            coords.power_x[i] = centerX + (powers_rad + rad / 4 + 2) * sin_angle;
+            coords.power_y[i] = centerY - (powers_rad + rad / 4 + 2) * cos_angle;
+            powers_rad += 5;
         }
 
         //RANDOM MATRIX
@@ -251,7 +251,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         TextOut(hdc, startX_mm, startY_mm, L"Modified matrix", 15);
         print_matrix(M, vertices, vertices, startX_rm + 200, startY_rm, hdc);
 
-        //COMPOSED
         //PATHS WITH DISTANCE 2
         double** paths2 = init_double_matrix(vertices, vertices);
         fill_zero(paths2, vertices, vertices);
@@ -266,7 +265,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         //TextOut(hdc, startX_mm + 200, startY_mm + 200, L"Paths with distance 3", 21);
         //print_matrix(composed2, vertices, vertices, startX_mm + 200, startY_mm + 200, hdc);
 
-        //транзитивне замикання
+        //PATHS WITH ANY DISTANCE
         double** reach_matrix = init_double_matrix(vertices, vertices);
         double** tmp = init_double_matrix(vertices, vertices);
         double** result = init_double_matrix(vertices, vertices);
@@ -301,7 +300,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             hanging_undirect(powers_undirect, 75, 90, hdc);
 
             same_power(powers_undirect, 50, 50, hdc);
-
             free(powers_undirect);
         }
         else if(graph_flag == 3)
@@ -313,12 +311,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             double** transposed_matrix = init_double_matrix(vertices, vertices);
             double** condensed_matrix = init_double_matrix(vertices, vertices);
             fill_zero(condensed_matrix, vertices, vertices);
-            int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0);
+            int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0, hdc);
             TextOut(hdc, 20, 90, L"Condensed matrix", 16);
             print_matrix(condensed_matrix, components_num, components_num, 20, 100, hdc);
-            wchar_t buffer[5];
-            swprintf(buffer, 5, L"%d ", components_num);
-            OutputDebugString(buffer);
 
             //coords
             double comp_angle = 2.0 * M_PI / (double)components_num;
@@ -332,7 +327,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
-
             EndPaint(hWnd, &ps);
             free(visited);
             free(stack);
@@ -489,6 +483,7 @@ void draw_condens_graph(int components_num, double** C, int vertex_rad, double d
             }
         }
     }
+    //draw vertices
     SelectObject(hdc, BPen);
     SelectObject(hdc, GetStockObject(DC_BRUSH));
     SetDCBrushColor(hdc, RGB(204, 204, 255));
@@ -528,7 +523,7 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     SetWorldTransform(hdc, &xForm);
     const double k = 0.6;
     double length = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    double vertex_rad = 20.0;
+    const double vertex_rad = 20.0;
     double a = k * length;
     double b = length / 2;
     double ellipse_y0 = b;
@@ -557,7 +552,7 @@ double** init_double_matrix(int rows, int columns)
     double** matrix = (double**)malloc(rows * sizeof(double*));
     for (int i = 0; i < vertices; i++)
     {
-        matrix[i] = (double*)calloc(columns, sizeof(double));
+        matrix[i] = (double*)malloc(columns * sizeof(double));
     }
     return matrix;
 }
@@ -667,8 +662,8 @@ int* power_entry(double** matrix, int* powers_entry, int rows, int columns, stru
             }
         }
         wchar_t buffer[20];
-        swprintf(buffer, 15, L"Power entry: %d", powers_entry[j]);
-        TextOut(hdc, coords.power_x[j], coords.power_y[j], buffer, 15);
+        swprintf(buffer, 15, L"Pow entry: %d", powers_entry[j]);
+        TextOut(hdc, coords.power_x[j], coords.power_y[j], buffer, 13);
     }
     return powers_entry;
 }
@@ -686,8 +681,8 @@ int* power_exit(double** matrix, int* powers_exit, int rows, int columns, struct
             }
         }
         wchar_t buffer[20];
-        swprintf(buffer, 14, L"Power exit: %d", powers_exit[i]);
-        TextOut(hdc, coords.power_x[i], coords.power_y[i] + 20, buffer, 14);
+        swprintf(buffer, 14, L"Pow exit: %d", powers_exit[i]);
+        TextOut(hdc, coords.power_x[i], coords.power_y[i] + 20, buffer, 12);
     }
     return powers_exit;
 }
@@ -853,22 +848,19 @@ void copy_matrix(double** matrix1, double** matrix2, int rows, int columns)
     }
 }
 
-//MAYBE OPTIMIZE??
 void logic_or(double** result, double** matrix1, double** matrix2, int rows, int columns)
 {
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < columns; j++)
         {
-            if ((matrix1[i][j] == 0 && matrix2[i][j] == 1) || 
-                (matrix1[i][j] == 1 && matrix2[i][j] == 0) ||
-                (matrix1[i][j] == 1 && matrix2[i][j] == 1))
+            if(matrix1[i][j] == 0 && matrix2[i][j] == 0)
             {
-                result[i][j] = 1.;
+                result[i][j] = 0.;
             }
             else
             {
-                result[i][j] = 0.;
+                result[i][j] = 1.;
             }
         }
     }
@@ -902,38 +894,41 @@ void dfs(int vertex, double** matrix, int* visited, int* stack, int* v)
     stack[(*v)++] = vertex;
 }
 
-void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels)
+void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels, int x, int y, HDC hdc)
 {
     visited[vertex] = 1;
     component_labels[vertex] = components_num;
     wchar_t buffer[5];
-    swprintf(buffer, 5, L"%d ", vertex + 1);
-    OutputDebugString(buffer);
+    swprintf(buffer, 5, L"%d,", vertex + 1);
+    TextOut(hdc, x, y, buffer, 3);
     for (int i = 0; i < vertices; i++)
     {
         if (transposed_matrix[vertex][i] && !visited[i])
         {
-            dfs_transpose(i, transposed_matrix, visited, components_num, component_labels);
+            x += 25;
+            dfs_transpose(i, transposed_matrix, visited, components_num, component_labels, x, y, hdc);
         }
     }
 }
 
-int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v)
+int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, HDC hdc)
 {
     int components_num = 0;
     for (int i = 0; i < vertices; i++)
     {
         visited[i] = 0;
     }
+    int x = 20;
+    int y = 150;
     while ((*v) > 0)
     {
         int vertex = stack[--(*v)];
         if (!visited[vertex])
         {
             components_num++;
-            OutputDebugString(L"Component: ");
-            dfs_transpose(vertex, transposed_matrix, visited, components_num, component_labels);
-            OutputDebugString(L"\n");
+            TextOut(hdc, x, y, L"Component: ", 11);
+            dfs_transpose(vertex, transposed_matrix, visited, components_num, component_labels, x + 80, y, hdc);
+            y += 15;
         }
     }
     return components_num;
@@ -956,7 +951,7 @@ void fill_condensed_matrix(double** matrix, double** condensed_matrix, int* comp
     }
 }
 
-int find_components(int* visited, double** matrix, double** transposed_matrix, double** condensed_matrix, int* stack, int* component_labels, int v)
+int find_components(int* visited, double** matrix, double** transposed_matrix, double** condensed_matrix, int* stack, int* component_labels, int v, HDC hdc)
 {
     for (int i = 0; i < vertices; i++)
     {
@@ -976,7 +971,7 @@ int find_components(int* visited, double** matrix, double** transposed_matrix, d
             transposed_matrix[i][j] = matrix[j][i];
         }
     }
-    int* components_num = print_components(visited, transposed_matrix, stack, component_labels, &v, condensed_matrix);
+    int components_num = print_components(visited, transposed_matrix, stack, component_labels, &v, hdc);
     fill_condensed_matrix(matrix, condensed_matrix, component_labels);
     return components_num;
 }
