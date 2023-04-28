@@ -49,7 +49,6 @@ int print_components(int* visited, double** transposed_matrix, int* stack, int* 
 void fill_condensed_matrix(double** matrix, double** condensed_matrix, int* component_labels);
 int find_components(int* visited, double** matrix, double** transposed_matrix, double** condensed_matrix,
                      int* stack, int* component_labels, int v, HDC hdc);
-void coords_components(int components_num, double centerX, double centerY, double rad, struct coords coords);
 
 struct coords
 {
@@ -313,7 +312,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             print_matrix(condensed_matrix, components_num, components_num, 50, 90, hdc);
 
             //coords
-            void coords_components(components_num, centerX, centerY, rad, coords);
+            double comp_angle = 2.0 * M_PI / (double)components_num;
+            for (int i = 0; i < components_num; i++)
+            {
+                double sin_angle = sin(comp_angle * (double)i);
+                double cos_angle = cos(comp_angle * (double)i);
+                coords.condensX[i] = centerX + rad * sin_angle;
+                coords.condensY[i] = centerY - rad * cos_angle;
+            }
 
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
@@ -1007,16 +1013,4 @@ int find_components(int* visited, double** matrix, double** transposed_matrix, d
     int components_num = print_components(visited, transposed_matrix, stack, component_labels, &v, 50, 20, hdc);
     fill_condensed_matrix(matrix, condensed_matrix, component_labels);
     return components_num;
-}
-
-void coords_components(int components_num, double centerX, double centerY, double rad, struct coords coords)
-{
-    double comp_angle = 2.0 * M_PI / (double)components_num;
-    for (int i = 0; i < components_num; i++)
-    {
-        double sin_angle = sin(comp_angle * (double)i);
-        double cos_angle = cos(comp_angle * (double)i);
-        coords.condensX[i] = centerX + rad * sin_angle;
-        coords.condensY[i] = centerY - rad * cos_angle;
-    }
 }
