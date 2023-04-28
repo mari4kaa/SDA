@@ -38,17 +38,18 @@ void fill_zero(double** matrix, int rows, int columns);
 double** multiply_matrix(double** composed, double** matrix1, double** matrix2, int columns, int rows);
 void copy_matrix(double** matrix1, double** matrix2, int rows, int columns);
 void logic_or(double** result, double** matrix1, double** matrix2, int rows, int columns);
-void strongroute_matrix(double** matrix, int rows, int columns);
+void connection_matrix(double** matrix, int rows, int columns);
 void print_paths_2(double** paths2, double** matrix, int rows, int columns);
 void print_paths_3(double** paths3, double** matrix, int rows, int columns);
 
 void draw_condens_graph(int components_num, double** C, int vertex_rad, double dtx, struct coords coords, HPEN BPen, HDC hdc);
 void dfs(int vertex, double** matrix, int* visited, int* stack, int* v);
-void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels, int x, int y, HDC hdc);
-int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, HDC hdc);
+void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels);
+int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, int x, int y, HDC hdc);
 void fill_condensed_matrix(double** matrix, double** condensed_matrix, int* component_labels);
 int find_components(int* visited, double** matrix, double** transposed_matrix, double** condensed_matrix,
                      int* stack, int* component_labels, int v, HDC hdc);
+void coords_components(int components_num, double centerX, double centerY, double rad, struct coords coords);
 
 struct coords
 {
@@ -204,13 +205,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 
         //set parameters of the graph
         struct coords coords;
-        const double rad = 200;
+        double rad = 200;
         double powers_rad = rad;
         double vertex_rad = rad / 10;
         double loop_rad = vertex_rad;
         double dtx = vertex_rad / 2.5;
-        const double centerX = 350;
-        const double centerY = 350;
+        double centerX = 350;
+        double centerY = 350;
         double angle = 2.0 * M_PI / (double)vertices;
         for (int i = 0; i < vertices; i++)
         {
@@ -255,15 +256,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** paths2 = init_double_matrix(vertices, vertices);
         fill_zero(paths2, vertices, vertices);
         paths2 = multiply_matrix(paths2, M, M, vertices, vertices);
-        //TextOut(hdc, startX_mm + 200, startY_mm, L"Paths with distance 2", 21);
-        //print_matrix(composed, vertices, vertices, startX_mm + 200, startY_mm, hdc);
 
         //PATHS WITH DISTANCE 3
         double** paths3 = init_double_matrix(vertices, vertices);
         fill_zero(paths3, vertices, vertices);
         paths3 = multiply_matrix(paths3, paths2, M, vertices, vertices);
-        //TextOut(hdc, startX_mm + 200, startY_mm + 200, L"Paths with distance 3", 21);
-        //print_matrix(composed2, vertices, vertices, startX_mm + 200, startY_mm + 200, hdc);
 
         //PATHS WITH ANY DISTANCE
         double** reach_matrix = init_double_matrix(vertices, vertices);
@@ -280,7 +277,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         TextOut(hdc, startX_mm, startY_mm + 200, L"Reach matrix", 13);
         print_matrix(result, vertices, vertices, startX_mm, startY_mm + 200, hdc);
 
-        strongroute_matrix(result, vertices, vertices);
+        connection_matrix(result, vertices, vertices);
         TextOut(hdc, startX_mm + 200, startY_mm + 200, L"Connection matrix", 17);
         print_matrix(result, vertices, vertices, startX_mm + 200, startY_mm + 200, hdc);
 
@@ -293,13 +290,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             int* powers_undirect = malloc(sizeof(int) * vertices);
             powers_undirect = power_undirect(B, powers_undirect, vertices, vertices, coords, hdc);
 
-            TextOut(hdc, 50, 75, L"Isolated: ", 10);
-            isolated_undirect(powers_undirect, 75, 75, hdc);
+            TextOut(hdc, 50, 20, L"Isolated: ", 10);
+            isolated_undirect(powers_undirect, 120, 20, hdc);
 
-            TextOut(hdc, 50, 90, L"Hanging: ", 10);
-            hanging_undirect(powers_undirect, 75, 90, hdc);
+            TextOut(hdc, 50, 35, L"Hanging: ", 10);
+            hanging_undirect(powers_undirect, 120, 35, hdc);
 
-            same_power(powers_undirect, 50, 50, hdc);
+            same_power(powers_undirect, 50, 65, hdc);
             free(powers_undirect);
         }
         else if(graph_flag == 3)
@@ -312,18 +309,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             double** condensed_matrix = init_double_matrix(vertices, vertices);
             fill_zero(condensed_matrix, vertices, vertices);
             int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0, hdc);
-            TextOut(hdc, 20, 90, L"Condensed matrix", 16);
-            print_matrix(condensed_matrix, components_num, components_num, 20, 100, hdc);
+            TextOut(hdc, 50, 90, L"Condensed matrix", 16);
+            print_matrix(condensed_matrix, components_num, components_num, 50, 90, hdc);
 
             //coords
-            double comp_angle = 2.0 * M_PI / (double)components_num;
-            for (int i = 0; i < components_num; i++)
-            {
-                double sin_angle = sin(comp_angle * (double)i);
-                double cos_angle = cos(comp_angle * (double)i);
-                coords.condensX[i] = centerX + rad * sin_angle;
-                coords.condensY[i] = centerY - rad * cos_angle;
-            }
+            void coords_components(components_num, centerX, centerY, rad, coords);
 
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
@@ -355,10 +345,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             int* powers_exit = malloc(sizeof(int) * vertices);
             powers_exit = power_exit(matrix, powers_exit, vertices, vertices, coords, hdc);
 
-            TextOut(hdc, 50, 75, L"Isolated: ", 10);
-            isolated_direct(powers_entry, powers_exit, 75, 75, hdc);
-            TextOut(hdc, 50, 90, L"Hanging: ", 10);
-            hanging_direct(powers_entry, powers_exit, 75, 90, hdc);
+            TextOut(hdc, 50, 20, L"Isolated: ", 10);
+            isolated_direct(powers_entry, powers_exit, 120, 20, hdc);
+            TextOut(hdc, 50, 35, L"Hanging: ", 10);
+            hanging_direct(powers_entry, powers_exit, 120, 35, hdc);
+
+            TextOut(hdc, 50, 65, L"Entry: ", 8);
+            same_power(powers_entry, 50, 80, hdc);
+
+            TextOut(hdc, 50, 95, L"Exit: ", 7);
+            same_power(powers_entry, 50, 110, hdc);
 
             free(powers_entry);
             free(powers_exit);
@@ -689,53 +685,77 @@ int* power_exit(double** matrix, int* powers_exit, int rows, int columns, struct
 
 void isolated_undirect(int* powers, int x, int y, HDC hdc)
 {
+    int flag_isolated = 0;
     for (int i = 0; i < vertices; i++)
     {
         if (powers[i] == 0)
         {
+            flag_isolated = 1;
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%d ", i);
             TextOut(hdc, x, y, buffer, 2);
         }
+    }
+    if (flag_isolated == 0)
+    {
+        TextOut(hdc, x, y, L"none", 5);
     }
 }
 
 void hanging_undirect(int* powers, int x, int y, HDC hdc)
 {
+    int flag_hanging = 0;
     for (int i = 0; i < vertices; i++)
     {
         if (powers[i] == 1)
         {
+            flag_hanging = 1;
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%d", i);
             TextOut(hdc, x, y, buffer, 2);
         }
     }
+    if (flag_hanging == 0)
+    {
+        TextOut(hdc, x, y, L"none", 5);
+    }
 }
 
 void isolated_direct(int* powers_entry, int* powers_exit, int x, int y, HDC hdc)
 {
+    int flag_isolated = 0;
     for (int i = 0; i < vertices; i++)
     {
         if (powers_entry[i] == 0 && powers_exit[i] == 0)
         {
+            flag_isolated = 1;
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%d ", i);
             TextOut(hdc, x, y, buffer, 2);
         }
     }
+    if (flag_isolated == 0)
+    {
+        TextOut(hdc, x, y, L"none", 5);
+    }
 }
 
 void hanging_direct(int* powers_entry, int* powers_exit, int x, int y, HDC hdc)
 {
+    int flag_hanging = 0;
     for (int i = 0; i < vertices; i++)
     {
         if ((powers_entry[i] == 1 && powers_exit[i] == 0) || (powers_entry[i] == 0 && powers_exit[i] == 1))
         {
+            flag_hanging = 1;
             wchar_t buffer[2];
             swprintf(buffer, 2, L"%d ", i);
             TextOut(hdc, x, y, buffer, 2);
         }
+    }
+    if (flag_hanging == 0)
+    {
+        TextOut(hdc, x, y, L"none", 5);
     }
 }
 
@@ -753,7 +773,7 @@ int same_power(int* powers, int x, int y, HDC hdc)
         }
     }
     wchar_t buffer[20];
-    swprintf(buffer, 15, L"Same power: %d", powers[0]);
+    swprintf(buffer, 15, L"Same power %d", powers[0]);
     TextOut(hdc, x, y, buffer, 15);
     return 0;
 }
@@ -795,7 +815,7 @@ void print_paths_2(double** paths2, double** matrix, int rows, int columns)
     {
         for (int j = 0; j < columns; j++)
         {
-            if (paths2[i][j] == 1.)
+            if (paths2[i][j] == 1)
             {
                 for (int k = 0; k < columns; k++)
                 {
@@ -866,7 +886,7 @@ void logic_or(double** result, double** matrix1, double** matrix2, int rows, int
     }
 }
 
-void strongroute_matrix(double** matrix, int rows, int columns)
+void connection_matrix(double** matrix, int rows, int columns)
 {
     for (int i = 0; i < rows; i++)
     {
@@ -894,41 +914,54 @@ void dfs(int vertex, double** matrix, int* visited, int* stack, int* v)
     stack[(*v)++] = vertex;
 }
 
-void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels, int x, int y, HDC hdc)
+void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int components_num, int* component_labels)
 {
     visited[vertex] = 1;
     component_labels[vertex] = components_num;
-    wchar_t buffer[5];
-    swprintf(buffer, 5, L"%d,", vertex + 1);
-    TextOut(hdc, x, y, buffer, 3);
     for (int i = 0; i < vertices; i++)
     {
         if (transposed_matrix[vertex][i] && !visited[i])
         {
-            x += 25;
-            dfs_transpose(i, transposed_matrix, visited, components_num, component_labels, x, y, hdc);
+            dfs_transpose(i, transposed_matrix, visited, components_num, component_labels);
         }
     }
 }
 
-int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, HDC hdc)
+int print_components(int* visited, double** transposed_matrix, int* stack, int* component_labels, int* v, int x, int y, HDC hdc)
 {
     int components_num = 0;
+    int startX = x + 90;
+    int startY = y;
     for (int i = 0; i < vertices; i++)
     {
         visited[i] = 0;
     }
-    int x = 20;
-    int y = 150;
     while ((*v) > 0)
     {
         int vertex = stack[--(*v)];
         if (!visited[vertex])
         {
             components_num++;
-            TextOut(hdc, x, y, L"Component: ", 11);
-            dfs_transpose(vertex, transposed_matrix, visited, components_num, component_labels, x + 80, y, hdc);
+            wchar_t buffer1[15];
+            swprintf(buffer1, 15, L"Component%d: ", components_num);
+            TextOut(hdc, x, y, buffer1, 11);
+            dfs_transpose(vertex, transposed_matrix, visited, components_num, component_labels);
             y += 15;
+        }
+    }
+    int x1 = startX;
+    for (int n = 0; n < components_num; n++)
+    {
+        x1 = startX;
+        for (int i = 0; i < vertices; i++)
+        {
+            if (component_labels[i] == n + 1)
+            {
+                wchar_t buffer2[5];
+                swprintf(buffer2, 5, L"%d,", i + 1);
+                TextOut(hdc, x1, startY + 15 * n, buffer2, 3);
+                x1 += 20;
+            }
         }
     }
     return components_num;
@@ -971,7 +1004,19 @@ int find_components(int* visited, double** matrix, double** transposed_matrix, d
             transposed_matrix[i][j] = matrix[j][i];
         }
     }
-    int components_num = print_components(visited, transposed_matrix, stack, component_labels, &v, hdc);
+    int components_num = print_components(visited, transposed_matrix, stack, component_labels, &v, 50, 20, hdc);
     fill_condensed_matrix(matrix, condensed_matrix, component_labels);
     return components_num;
+}
+
+void coords_components(int components_num, double centerX, double centerY, double rad, struct coords coords)
+{
+    double comp_angle = 2.0 * M_PI / (double)components_num;
+    for (int i = 0; i < components_num; i++)
+    {
+        double sin_angle = sin(comp_angle * (double)i);
+        double cos_angle = cos(comp_angle * (double)i);
+        coords.condensX[i] = centerX + rad * sin_angle;
+        coords.condensY[i] = centerY - rad * cos_angle;
+    }
 }
