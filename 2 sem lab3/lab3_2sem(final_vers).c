@@ -9,9 +9,9 @@
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A,
-                      HPEN KPen, HPEN PPen, HDC hdc);
+    HPEN KPen, HPEN PPen, HDC hdc);
 void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** B,
-                        HPEN KPen, HPEN PPen, HDC hdc);
+    HPEN KPen, HPEN PPen, HDC hdc);
 void arrow(double fi, double px, double py, HDC hdc);
 void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc);
 void print_matrix(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
@@ -96,7 +96,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             L"BUTTON",
             L"Undirected graph",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-            700, 
+            700,
             125,
             160,
             50,
@@ -135,7 +135,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         SelectObject(hdc, NoPen);
         Rectangle(hdc, 0, 0, 670, 700);
 
-        wchar_t* nn[vertices] = { L"1", L"2", L"3", L"4", L"5", L"6", L"7", L"8", L"9", L"10", L"11"};
         //set parameters of the graph
         struct coords coords;
         double rad = 200;
@@ -154,7 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             coords.loop_X[i] = centerX + (rad + loop_rad) * sin_angle;
             coords.loop_Y[i] = centerY - (rad + loop_rad) * cos_angle;
         }
-        
+
         //PRINT RANDOM MATRIX
         double** T = randm(vertices, vertices);
         double coef = 1.0 - 0.02 - 0.005 - 0.25;
@@ -191,7 +190,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         SetBkMode(hdc, TRANSPARENT);
         for (int i = 0; i < vertices; i++) {
             Ellipse(hdc, coords.nx[i] - vertex_rad, coords.ny[i] - vertex_rad, coords.nx[i] + vertex_rad, coords.ny[i] + vertex_rad);
-            TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, nn[i], 2);
+            wchar_t buffer[5];
+            swprintf(buffer, 5, L"%d", i + 1);
+            TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
         }
 
         EndPaint(hWnd, &ps);
@@ -210,7 +211,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 }
 
 void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A,
-                      HPEN KPen, HPEN PPen, HDC hdc)
+    HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertices; i++)
     {
@@ -254,7 +255,7 @@ void draw_directgraph(int centerX, int centerY, int rad, int vertex_rad, int loo
 }
 
 void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** B,
-                        HPEN KPen, HPEN PPen, HDC hdc)
+    HPEN KPen, HPEN PPen, HDC hdc)
 {
     for (int i = 0; i < vertices; i++)
     {
@@ -310,12 +311,12 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     double a = k * length;
     double b = length / 2;
     double ellipse_y0 = b;
-    double component = b * sqrt(b*b*vertex_rad*vertex_rad - a*a*b*b + a*a*ellipse_y0*ellipse_y0 - a*a*vertex_rad*vertex_rad + pow(a, 4));
+    double component = b * sqrt(b * b * vertex_rad * vertex_rad - a * a * b * b + a * a * ellipse_y0 * ellipse_y0 - a * a * vertex_rad * vertex_rad + pow(a, 4));
     double contact_y1 = (a * a * ellipse_y0 - component) / (-b * b + a * a);
     double contact_x1 = sqrt(vertex_rad * vertex_rad - contact_y1 * contact_y1);
     double contact_y2 = length - contact_y1;
     double contact_x2 = -contact_x1;
-    if (distance <= vertices/2)
+    if (distance <= vertices / 2)
     {
         Arc(hdc, -k * length, length, k * length, 0, 0, 0, 0, length);
         double arrow_angle = -atan2(length - contact_y2, contact_x2) + 0.3 / 2;
@@ -330,13 +331,20 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
     SetWorldTransform(hdc, &baseForm);
 }
 
+double** init_double_matrix(int rows, int columns)
+{
+    double** matrix = (double**)malloc(rows * sizeof(double*));
+    for (int i = 0; i < rows; i++)
+    {
+        matrix[i] = (double*)malloc(columns * sizeof(double));
+    }
+    return matrix;
+}
+
 double** randm(int rows, int columns)
 {
     srand(2111);
-    double** matrix = (double**) malloc(sizeof(double*) * rows);
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = (double*) malloc(sizeof(double) * columns);
-    }
+    double** matrix = init_double_matrix(rows, columns);
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < columns; j++) {
             matrix[i][j] = (double)(rand() * 2.0) / (double)RAND_MAX;
