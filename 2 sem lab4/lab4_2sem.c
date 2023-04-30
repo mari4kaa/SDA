@@ -1,4 +1,4 @@
-﻿#include<stdio.h>
+#include<stdio.h>
 #include<stdlib.h>
 #include<windows.h>
 #define _USE_MATH_DEFINES
@@ -552,7 +552,7 @@ void draw_arc(int x1, int y1, int x2, int y2, int distance, HDC hdc)
 double** init_double_matrix(int rows, int columns)
 {
     double** matrix = (double**)malloc(rows * sizeof(double*));
-    for (int i = 0; i < vertices; i++)
+    for (int i = 0; i < rows; i++)
     {
         matrix[i] = (double*)malloc(columns * sizeof(double));
     }
@@ -562,7 +562,7 @@ double** init_double_matrix(int rows, int columns)
 double** randm(int rows, int columns)
 {
     srand(2111);
-    double** matrix = init_double_matrix(vertices, vertices);
+    double** matrix = init_double_matrix(rows, columns);
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < columns; j++) {
             matrix[i][j] = (double)(rand() * 2.0) / (double)RAND_MAX;
