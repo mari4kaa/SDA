@@ -949,8 +949,8 @@ int print_components(int* visited, double** transposed_matrix, int* stack, int* 
         {
             components_num++;
             wchar_t buffer1[15];
-            swprintf(buffer1, 15, L"Component%d: ", components_num);
-            TextOut(hdc, x, y, buffer1, 11);
+            swprintf(buffer1, 15, L"Component%d:", components_num);
+            TextOut(hdc, x, y, buffer1, 12);
             dfs_transpose(vertex, transposed_matrix, visited, components_num, component_labels);
             y += 15;
         }
