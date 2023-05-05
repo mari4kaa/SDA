@@ -110,54 +110,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     HWND hwndButton_modif;
     HWND hwndButton_condens;
     int graph_flag = 1;
-    //random matrix
-    double** T = randm(vertices, vertices);
-    double coef = 1.0 - 0.01 - 0.01 - 0.3;
-    double** A = mulmr(coef, T, vertices, vertices);
-
-    //symetric matrix
-    double** T2 = randm(vertices, vertices);
-    double** B = symetricm(mulmr(coef, T2, vertices, vertices), vertices, vertices);
-
-    //modified matrix
-    double** T3 = randm(vertices, vertices);
-    double coef_modif = 1.0 - 0.005 - 0.005 - 0.27;
-    double** M = mulmr(coef_modif, T3, vertices, vertices);
-
-    //PATHS WITH DISTANCE 2
-    double** paths2 = init_double_matrix(vertices, vertices);
-    fill_zero(paths2, vertices, vertices);
-    paths2 = multiply_matrix(paths2, M, M, vertices, vertices);
-
-    //PATHS WITH DISTANCE 3
-    double** paths3 = init_double_matrix(vertices, vertices);
-    fill_zero(paths3, vertices, vertices);
-    paths3 = multiply_matrix(paths3, paths2, M, vertices, vertices);
-
-    //PATHS WITH ANY DISTANCE
-    double** reach_matrix = init_double_matrix(vertices, vertices);
-    double** tmp = init_double_matrix(vertices, vertices);
-    double** result = init_double_matrix(vertices, vertices);
-    fill_zero(reach_matrix, vertices, vertices);
-    reach_matrix = multiply_matrix(reach_matrix, M, M, vertices, vertices);
-    for (int i = 0; i < vertices - 1; i++)
-    {
-        copy_matrix(tmp, reach_matrix, vertices, vertices);
-        reach_matrix = multiply_matrix(reach_matrix, reach_matrix, M, vertices, vertices);
-        logic_or(result, tmp, reach_matrix, vertices, vertices);
-    }
-
-    //connection matrix
-    connection_matrix(result, vertices, vertices);
-
-    //strong components
-    int* visited = malloc(sizeof(int) * vertices);
-    int* stack = malloc(sizeof(int) * vertices);
-    int* component_labels = malloc(sizeof(int) * vertices);
-    double** transposed_matrix = init_double_matrix(vertices, vertices);
-    double** condensed_matrix = init_double_matrix(vertices, vertices);
-    fill_zero(condensed_matrix, vertices, vertices);
-
     switch (messg) {
     case WM_CREATE:
     {
@@ -274,28 +226,57 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         }
 
         //RANDOM MATRIX
+        double** T = randm(vertices, vertices);
+        double coef = 1.0 - 0.01 - 0.01 - 0.3;
+        double** A = mulmr(coef, T, vertices, vertices);
         int startX_rm = 700;
         int startY_rm = 200;
         TextOut(hdc, startX_rm, startY_rm, L"Random matrix", 13);
         print_matrix(A, vertices, vertices, startX_rm, startY_rm, hdc);
 
         //SYMETRIC MATRIX
+        double** T2 = randm(vertices, vertices);
+        double** B = symetricm(mulmr(coef, T2, vertices, vertices), vertices, vertices);
         int startX_sm = startX_rm;
         int startY_sm = startY_rm + 200;
         TextOut(hdc, startX_sm, startY_sm, L"Symetric matrix", 15);
         print_matrix(B, vertices, vertices, startX_sm, startY_sm, hdc);
 
         //MODIFIED MATRIX
+        double** T3 = randm(vertices, vertices);
+        double coef_modif = 1.0 - 0.005 - 0.005 - 0.27;
+        double** M = mulmr(coef_modif, T3, vertices, vertices);
         int startX_mm = startX_rm + 200;
         int startY_mm = startY_rm;
         TextOut(hdc, startX_mm, startY_mm, L"Modified matrix", 15);
         print_matrix(M, vertices, vertices, startX_rm + 200, startY_rm, hdc);
 
+        //PATHS WITH DISTANCE 2
+        double** paths2 = init_double_matrix(vertices, vertices);
+        fill_zero(paths2, vertices, vertices);
+        paths2 = multiply_matrix(paths2, M, M, vertices, vertices);
+
+        //PATHS WITH DISTANCE 3
+        double** paths3 = init_double_matrix(vertices, vertices);
+        fill_zero(paths3, vertices, vertices);
+        paths3 = multiply_matrix(paths3, paths2, M, vertices, vertices);
+
         //PATHS WITH ANY DISTANCE
+        double** reach_matrix = init_double_matrix(vertices, vertices);
+        double** tmp = init_double_matrix(vertices, vertices);
+        double** result = init_double_matrix(vertices, vertices);
+        fill_zero(reach_matrix, vertices, vertices);
+        reach_matrix = multiply_matrix(reach_matrix, M, M, vertices, vertices);
+        for (int i = 0; i < vertices - 1; i++)
+        {
+            copy_matrix(tmp, reach_matrix, vertices, vertices);
+            reach_matrix = multiply_matrix(reach_matrix, reach_matrix, M, vertices, vertices);
+            logic_or(result, tmp, reach_matrix, vertices, vertices);
+        }
         TextOut(hdc, startX_mm, startY_mm + 200, L"Reach matrix", 13);
         print_matrix(result, vertices, vertices, startX_mm, startY_mm + 200, hdc);
 
-        //CONNECTION MATRIX
+        connection_matrix(result, vertices, vertices);
         TextOut(hdc, startX_mm + 200, startY_mm + 200, L"Connection matrix", 17);
         print_matrix(result, vertices, vertices, startX_mm + 200, startY_mm + 200, hdc);
 
@@ -320,6 +301,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         else if(graph_flag == 3)
         {
             //strong components
+            int* visited = malloc(sizeof(int) * vertices);
+            int* stack = malloc(sizeof(int) * vertices);
+            int* component_labels = malloc(sizeof(int) * vertices);
+            double** transposed_matrix = init_double_matrix(vertices, vertices);
+            double** condensed_matrix = init_double_matrix(vertices, vertices);
+            fill_zero(condensed_matrix, vertices, vertices);
             int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0, hdc);
             TextOut(hdc, 50, 90, L"Condensed matrix", 16);
             print_matrix(condensed_matrix, components_num, components_num, 50, 90, hdc);
@@ -337,6 +324,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
             EndPaint(hWnd, &ps);
+            free(visited);
+            free(stack);
+            free(component_labels);
+            free_all(transposed_matrix, vertices);
+            free_all(condensed_matrix, vertices);
         }
         else
         {
@@ -385,10 +377,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             swprintf(buffer, 5, L"%d", i + 1);
             TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
         }
-        EndPaint(hWnd, &ps);
-        break;
 
-    case WM_DESTROY:
         free_all(A, vertices);
         free_all(B, vertices);
         free_all(M, vertices);
@@ -397,11 +386,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         free_all(reach_matrix, vertices);
         free_all(result, vertices);
         free_all(tmp, vertices);
-        free(visited);
-        free(stack);
-        free(component_labels);
-        free_all(transposed_matrix, vertices);
-        free_all(condensed_matrix, vertices);
+
+        EndPaint(hWnd, &ps);
+        break;
+
+    case WM_DESTROY:
         PostQuitMessage(0);
         break;
     default:
