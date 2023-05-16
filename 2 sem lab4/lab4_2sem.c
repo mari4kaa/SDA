@@ -110,6 +110,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     HWND hwndButton_modif;
     HWND hwndButton_condens;
     int graph_flag = 1;
+
+    //strong components
+    int* visited = malloc(sizeof(int) * vertices);
+    int* stack = malloc(sizeof(int) * vertices);
+    int* component_labels = malloc(sizeof(int) * vertices);
+    double** transposed_matrix = init_double_matrix(vertices, vertices);
+    double** condensed_matrix = init_double_matrix(vertices, vertices);
+    fill_zero(condensed_matrix, vertices, vertices);
+
     switch (messg) {
     case WM_CREATE:
     {
@@ -273,9 +282,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             reach_matrix = multiply_matrix(reach_matrix, reach_matrix, M, vertices, vertices);
             logic_or(result, tmp, reach_matrix, vertices, vertices);
         }
+
+        for (int i = 0; i < vertices; i++)
+        {
+            result[i][i] = 1;
+        }
         TextOut(hdc, startX_mm, startY_mm + 200, L"Reach matrix", 13);
         print_matrix(result, vertices, vertices, startX_mm, startY_mm + 200, hdc);
 
+        //CONNECTION MATRIX
         connection_matrix(result, vertices, vertices);
         TextOut(hdc, startX_mm + 200, startY_mm + 200, L"Connection matrix", 17);
         print_matrix(result, vertices, vertices, startX_mm + 200, startY_mm + 200, hdc);
@@ -301,12 +316,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         else if(graph_flag == 3)
         {
             //strong components
-            int* visited = malloc(sizeof(int) * vertices);
-            int* stack = malloc(sizeof(int) * vertices);
-            int* component_labels = malloc(sizeof(int) * vertices);
-            double** transposed_matrix = init_double_matrix(vertices, vertices);
-            double** condensed_matrix = init_double_matrix(vertices, vertices);
-            fill_zero(condensed_matrix, vertices, vertices);
             int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0, hdc);
             TextOut(hdc, 50, 90, L"Condensed matrix", 16);
             print_matrix(condensed_matrix, components_num, components_num, 50, 90, hdc);
@@ -324,11 +333,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
             EndPaint(hWnd, &ps);
-            free(visited);
-            free(stack);
-            free(component_labels);
-            free_all(transposed_matrix, vertices);
-            free_all(condensed_matrix, vertices);
         }
         else
         {
@@ -377,7 +381,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             swprintf(buffer, 5, L"%d", i + 1);
             TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
         }
-
+        EndPaint(hWnd, &ps);
         free_all(A, vertices);
         free_all(B, vertices);
         free_all(M, vertices);
@@ -386,11 +390,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         free_all(reach_matrix, vertices);
         free_all(result, vertices);
         free_all(tmp, vertices);
-
-        EndPaint(hWnd, &ps);
         break;
 
     case WM_DESTROY:
+        free(visited);
+        free(stack);
+        free(component_labels);
+        free_all(transposed_matrix, vertices);
+        free_all(condensed_matrix, vertices);
         PostQuitMessage(0);
         break;
     default:
@@ -912,7 +919,7 @@ void dfs(int vertex, double** matrix, int* visited, int* stack, int* v)
     visited[vertex] = 1;
     for (int i = 0; i < vertices; i++)
     {
-        if (matrix[vertex][i] && !visited[i])
+        if (matrix[vertex][i] == 1 && visited[i] == 0)
         {
             dfs(i, matrix, visited, stack, v);
         }
@@ -926,7 +933,7 @@ void dfs_transpose(int vertex, double** transposed_matrix, int* visited, int com
     component_labels[vertex] = components_num;
     for (int i = 0; i < vertices; i++)
     {
-        if (transposed_matrix[vertex][i] && !visited[i])
+        if (transposed_matrix[vertex][i] == 1 && visited[i] == 0)
         {
             dfs_transpose(i, transposed_matrix, visited, components_num, component_labels);
         }
