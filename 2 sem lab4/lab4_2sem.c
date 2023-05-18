@@ -93,10 +93,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
         (HINSTANCE)hInstance,
         (HINSTANCE)NULL);
     ShowWindow(hWnd, nCmdShow);
-    while (GetMessage(&lpMsg, hWnd, 0, 0))
-    {
-        TranslateMessage(&lpMsg);
-        DispatchMessage(&lpMsg);
+    int b;
+    while ((b = GetMessage(&lpMsg, hWnd, 0, 0)) != 0) {
+        if (b == -1) {
+            return lpMsg.wParam;
+        }
+        else {
+            TranslateMessage(&lpMsg);
+            DispatchMessage(&lpMsg);
+        }
     }
     return(lpMsg.wParam);
 }
