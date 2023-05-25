@@ -116,14 +116,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     HWND hwndButton_condens;
     int graph_flag = 1;
 
-    //strong components
-    int* visited = malloc(sizeof(int) * vertices);
-    int* stack = malloc(sizeof(int) * vertices);
-    int* component_labels = malloc(sizeof(int) * vertices);
-    double** transposed_matrix = init_double_matrix(vertices, vertices);
-    double** condensed_matrix = init_double_matrix(vertices, vertices);
-    fill_zero(condensed_matrix, vertices, vertices);
-
     switch (messg) {
     case WM_CREATE:
     {
@@ -321,6 +313,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         else if(graph_flag == 3)
         {
             //strong components
+            int* visited = malloc(sizeof(int) * vertices);
+            int* stack = malloc(sizeof(int) * vertices);
+            int* component_labels = malloc(sizeof(int) * vertices);
+            double** transposed_matrix = init_double_matrix(vertices, vertices);
+            double** condensed_matrix = init_double_matrix(vertices, vertices);
+            fill_zero(condensed_matrix, vertices, vertices);
+
             int components_num = find_components(visited, M, transposed_matrix, condensed_matrix, stack, component_labels, 0, hdc);
             TextOut(hdc, 50, 90, L"Condensed matrix", 16);
             print_matrix(condensed_matrix, components_num, components_num, 50, 90, hdc);
@@ -337,6 +336,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 
             //draw graph
             draw_condens_graph(components_num, condensed_matrix, vertex_rad, dtx, coords, BPen, hdc);
+            free(visited);
+            free(stack);
+            free(component_labels);
+            free_all(transposed_matrix, vertices);
+            free_all(condensed_matrix, vertices);
             EndPaint(hWnd, &ps);
         }
         else
@@ -398,11 +402,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_DESTROY:
-        free(visited);
-        free(stack);
-        free(component_labels);
-        free_all(transposed_matrix, vertices);
-        free_all(condensed_matrix, vertices);
         PostQuitMessage(0);
         break;
     default:
