@@ -1,4 +1,4 @@
-﻿//DON'T FORGET TO FREE GRAPH!!!!!!!!!!!
+//FREE GRAPH!!!!!!!!!!!
 #include<stdio.h>
 #include<stdlib.h>
 #include<windows.h>
@@ -20,18 +20,20 @@ void free_all(double** matrix, int rows);
 
 void modify_matrix(double** matrix, double** mulmatrix);
 double** roundm(double** T);
-double** symetricm(double** matrix2);
+double** symetricm(double** matrix);
 double** B_matrix(double** Wt);
 double** C_matrix(double** B);
 double** D_matrix(double** B);
 double** Wt_matrix(double** Wt, double** C, double** D, double** Tr);
 double** Tr_matrix();
 
-struct Graph* createGraph(double** matrix, double** W);
+int edges_num(double** symmetric_matrix);
+struct Graph* createGraph(double** A, double** W, int edges_num);
+void src_dest_weight(int i, double** A, double** W, int* src, int* dest, int* weight);
 int idx_of_min(int* weights, int* visited);
-void find_mst(struct Graph* graph, struct Edge* mst, double** W);
+void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W);
 void print_visited(int src, int dest, float weight);
-void draw_mst(int n_tree, struct Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc);
+void draw_mst(int n_tree, struct MST_Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc);
 
 struct coords
 {
@@ -41,20 +43,21 @@ struct coords
     double loop_Y[vertices];
 };
 
-//переробити
 struct Graph
 {
-    struct Node* head[vertices];
+    int idx;
+    struct Node* head;
+    struct Graph* next_vertex;
 };
 
 struct Node
 {
-    int dest;
+    struct Node* dest;
     double weight;
-    struct Node* next;
+    struct Node* next_node;
 };
 
-struct Edge
+struct MST_Edge
 {
     int src;
     int dest;
@@ -219,9 +222,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
             TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
         }
 
-        //MST
-        struct Graph* graph = createGraph(A, W);
-        struct Edge* mst = (struct Edge*)malloc(vertices * sizeof(struct Edge));
+        //MST (Prim's tree)
+        int e_num = edges_num(A);
+        struct Graph* graph = createGraph(A, W, e_num);
+        struct MST_Edge* mst = (struct MST_Edge*)malloc(vertices * sizeof(struct MST_Edge));
         find_mst(graph, mst, W);
 
         SelectObject(hdc, GetStockObject(DC_BRUSH));
@@ -491,60 +495,118 @@ double** Wt_matrix(double** Wt, double** C, double** D, double** Tr)
     return Wt;
 }
 
-double** symetricm(double** matrix2)
+double** symetricm(double** matrix)
 {
-    double** matrix1 = init_double_matrix(vertices, vertices);
+    double** symmetric_matrix = init_double_matrix(vertices, vertices);
     for (int i = 0; i < vertices; i++) {
         for (int j = 0; j < vertices; j++) {
-            if (matrix2[i][j] != matrix2[j][i])
+            if (matrix[i][j] != matrix[j][i])
             {
-                double value = (matrix2[i][j] == 0) ? matrix2[j][i] : matrix2[i][j];
-                matrix1[i][j] = value;
-                matrix1[j][i] = value;
+                double value = (matrix[i][j] == 0) ? matrix[j][i] : matrix[i][j];
+                symmetric_matrix[i][j] = value;
+                symmetric_matrix[j][i] = value;
             }
             else
             {
-                matrix1[i][j] = matrix2[i][j];
+                symmetric_matrix[i][j] = matrix[i][j];
             }
         }
     }
-    return matrix1;
+    return symmetric_matrix;
 }
 
-struct Graph* createGraph(double** matrix, double** W)
+int edges_num(double** symmetric_matrix)
+{
+    int edges_count = 0;
+    for (int i = 0; i < vertices; i++)
+    {
+        for (int j = i; j < vertices; j++)
+        {
+            if (symmetric_matrix[i][j] == 1)
+            {
+                edges_count++;
+            }
+        }
+    }
+    return edges_count;
+}
+
+struct Graph* createGraph(double** A, double** W, int edges_num)
 {
     struct Graph* graph = (struct Graph*)malloc(sizeof(struct Graph));
+    graph->head = NULL;
+    graph->next_vertex = NULL;
+    struct Graph* current_vertex = graph;
 
-    for (int i = 0; i < vertices; i++)
+    for (int i = 0; i < vertices - 1; i++)
     {
-        graph->head[i] = NULL;
+        struct Graph* next_vertex = (struct Graph*)malloc(sizeof(struct Graph));
+        next_vertex->head = NULL;
+        next_vertex->next_vertex = NULL;
+        current_vertex->next_vertex = next_vertex;
+        current_vertex->idx = i;
+        current_vertex = current_vertex->next_vertex;
     }
+    current_vertex->idx = vertices - 1;
 
-    for (int i = 0; i < vertices; i++)
+    for (int i = 0; i < edges_num; i++)
     {
-        for (int j = 0; j < vertices; j++)
+        int src = -1;
+        int dest = -1;
+        int weight = -1;
+        src_dest_weight(i, A, W, &src, &dest, &weight);
+
+        //connection in one direction
+        struct Graph* current_vertex_src = graph;
+        while (current_vertex_src->idx != src)
         {
-            if (matrix[i][j] == 1)
+            current_vertex_src = current_vertex_src->next_vertex;
+        }
+
+        struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+        new_node->dest = dest;
+        new_node->weight = weight;
+        new_node->next_node = current_vertex_src->head;
+        current_vertex_src->head = new_node;
+
+        //connection in opposite direction
+        if (src != dest)
+        {
+            struct Graph* current_vertex_dest = graph;
+            while (current_vertex_dest->idx != dest)
             {
-                int src = i;
-                int dest = j;
-                double weight = W[i][j];
-
-                struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
-                new_node->dest = dest;
-                new_node->weight = weight;
-                new_node->next = graph->head[src];
-                graph->head[src] = new_node;
-
-                new_node = (struct Node*)malloc(sizeof(struct Node));
-                new_node->dest = src;
-                new_node->weight = weight;
-                new_node->next = graph->head[dest];
-                graph->head[dest] = new_node;
+                current_vertex_dest = current_vertex_dest->next_vertex;
             }
+            new_node = (struct Node*)malloc(sizeof(struct Node));
+            new_node->dest = src;
+            new_node->weight = weight;
+            new_node->next_node = current_vertex_dest->head;
+            current_vertex_dest->head = new_node;
+            current_vertex_dest = current_vertex_dest->next_vertex;
         }
     }
     return graph;
+}
+
+void src_dest_weight(int i, double** A, double** W, int* src, int* dest, int* weight)
+{
+    int count = -1;
+    for (int m = 0; m < vertices; m++)
+    {
+        for (int k = m; k < vertices; k++)
+        {
+            if (count != i)
+            {
+                if (A[m][k] == 1)
+                {
+                    count++;
+                    (*src) = m;
+                    (*dest) = k;
+                    (*weight) = W[m][k];
+                }
+            }
+        }
+    }
 }
 
 int idx_of_min(int* weights, int* visited)
@@ -563,7 +625,7 @@ int idx_of_min(int* weights, int* visited)
     return min_idx;
 }
 
-void find_mst(struct Graph* graph, struct Edge* mst, double** W)
+void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W)
 {
     int* sources = (int*)malloc(vertices * sizeof(int));
     int* weights = (int*)malloc(vertices * sizeof(int));
@@ -577,21 +639,28 @@ void find_mst(struct Graph* graph, struct Edge* mst, double** W)
     }
 
     weights[0] = 0;
+    int visited_count = 0;
+    struct Graph* current_vertex = graph;
 
-    for (int i = 0; i < vertices; i++)
+    while (current_vertex != NULL)
     {
         int min_idx = idx_of_min(weights, visited);
         visited[min_idx] = 1;
+        struct Graph* temp = graph;
+        while (temp->idx != min_idx)
+        {
+            temp = temp->next_vertex;
+        }
 
-        print_visited(sources[min_idx], min_idx, W[sources[min_idx]][min_idx]);
-        struct Edge* p_curr_mst = &mst[i];
+        struct MST_Edge* p_curr_mst = &mst[visited_count];
 
         p_curr_mst->dest = min_idx;
         p_curr_mst->src = sources[min_idx];
         p_curr_mst->weight = W[sources[min_idx]][min_idx];
+        print_visited(p_curr_mst->src, p_curr_mst->dest, p_curr_mst->src);
+        visited_count++;
 
-
-        struct Node* node = graph->head[min_idx];
+        struct Node* node = temp->head;
         int dest;
         int weight;
         while (node != NULL)
@@ -604,8 +673,9 @@ void find_mst(struct Graph* graph, struct Edge* mst, double** W)
                 sources[dest] = min_idx;
                 weights[dest] = weight;
             }
-            node = node->next;
+            node = node->next_node;
         }
+        current_vertex = current_vertex->next_vertex;
     }
     free(sources);
     free(weights);
@@ -619,7 +689,7 @@ void print_visited(int src, int dest, float weight)
     OutputDebugString(buffer);
 }
 
-void draw_mst(int n_tree, struct Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc)
+void draw_mst(int n_tree, struct MST_Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc)
 {
     //draw lines, elipses for weights and weights
     for (int i = 0; i < n_tree; i++)
