@@ -19,7 +19,7 @@ void free_all(double** matrix, int rows);
 
 void modify_matrix(double** matrix, double** mulmatrix);
 double** roundm(double** T);
-double** symetricm(double** matrix);
+double** symmetricm(double** matrix);
 double** B_matrix(double** Wt);
 double** C_matrix(double** B);
 double** D_matrix(double** B);
@@ -29,6 +29,9 @@ double** Tr_matrix();
 int edges_num(double** symmetric_matrix);
 struct Graph* createGraph(double** A, double** W, int edges_num);
 void src_dest_weight(int i, double** A, double** W, int* src, int* dest, int* weight);
+struct Graph* find_vertex(struct Graph* start, int idx);
+struct Node* find_node(struct Node* node, int node_idx);
+void free_graph(struct Graph* graph);
 int idx_of_min(int* weights, int* visited);
 void find_mst(struct Graph* graph, struct MST_Edge* mst);
 void print_visited(int src, int dest, float weight);
@@ -157,7 +160,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** T = randm(vertices, vertices);
         double coef = 1.0 - 0.01 - 0.005 - 0.05;
         T = mulmr(coef, T, vertices, vertices);
-        double** A = symetricm(T);
+        double** A = symmetricm(T);
 
         double** T2 = randm(vertices, vertices);
         modify_matrix(T2, A);
@@ -168,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         double** D = D_matrix(B);
         double** Tr = Tr_matrix();
         Wt = Wt_matrix(Wt, C, D, Tr);
-        double** W = symetricm(Wt);
+        double** W = symmetricm(Wt);
 
         HPEN BPen = CreatePen(PS_SOLID, 2, RGB(50, 0, 255));
         HPEN PPen = CreatePen(PS_SOLID, 2, RGB(153, 0, 153));
@@ -225,7 +228,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         int e_num = edges_num(A);
         struct Graph* graph = createGraph(A, W, e_num);
         struct MST_Edge* mst = (struct MST_Edge*)malloc(vertices * sizeof(struct MST_Edge));
-        find_mst(graph, mst, W);
+        find_mst(graph, mst);
 
         SelectObject(hdc, GetStockObject(DC_BRUSH));
         SetDCBrushColor(hdc, RGB(219, 150, 150));
@@ -247,6 +250,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         free_all(D, vertices);
         free_all(Tr, vertices);
         free(mst);
+        free_graph(graph);
         break;
 
     case WM_DESTROY:
@@ -494,7 +498,7 @@ double** Wt_matrix(double** Wt, double** C, double** D, double** Tr)
     return Wt;
 }
 
-double** symetricm(double** matrix)
+double** symmetricm(double** matrix)
 {
     double** symmetric_matrix = init_double_matrix(vertices, vertices);
     for (int i = 0; i < vertices; i++) {
@@ -557,10 +561,7 @@ struct Graph* createGraph(double** A, double** W, int edges_num)
 
         //connection in one direction
         struct Graph* current_vertex_src = graph;
-        while (current_vertex_src->idx != src)
-        {
-            current_vertex_src = current_vertex_src->next_vertex;
-        }
+        current_vertex_src = find_vertex(current_vertex_src, src);
 
         struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
         new_node->idx = dest;
@@ -572,10 +573,8 @@ struct Graph* createGraph(double** A, double** W, int edges_num)
         if (src != dest)
         {
             struct Graph* current_vertex_dest = graph;
-            while (current_vertex_dest->idx != dest)
-            {
-                current_vertex_dest = current_vertex_dest->next_vertex;
-            }
+            current_vertex_dest = find_vertex(current_vertex_dest, dest);
+
             new_node = (struct Node*)malloc(sizeof(struct Node));
             new_node->idx = src;
             new_node->weight = weight;
@@ -605,6 +604,41 @@ void src_dest_weight(int i, double** A, double** W, int* src, int* dest, int* we
                 }
             }
         }
+    }
+}
+
+struct Graph* find_vertex(struct Graph* start, int idx)
+{
+    while (start->idx != idx)
+    {
+        start = start->next_vertex;
+    }
+    return start;
+}
+
+struct Node* find_node(struct Node* node, int node_idx)
+{
+    while (node->idx != node_idx)
+    {
+        node = node->next_node;
+    }
+    return node;
+}
+
+void free_graph(struct Graph* graph)
+{
+    while (graph != NULL)
+    {
+        struct Node* node = graph->head;
+        while (node != NULL)
+        {
+            struct Node* next_node = node->next_node;
+            free(node);
+            node = next_node;
+        }
+        struct Graph* next_vertex = graph->next_vertex;
+        free(graph);
+        graph = next_vertex;
     }
 }
 
@@ -638,27 +672,19 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
     }
 
     weights[0] = 0;
-    int visited_count = 0;
 
-    struct Graph* current_vertex = graph;
-    while (current_vertex != NULL)
+    for(int visited_count = 0; visited_count < vertices; visited_count++)
     {
         int min_idx = idx_of_min(weights, visited);
         visited[min_idx] = 1;
-
-        //find right vertex
+        //find the edge for mst
         struct Graph* temp = graph;
-        while (temp->idx != min_idx)
-        {
-            temp = temp->next_vertex;
-        }
+        temp = find_vertex(temp, min_idx);
         struct Node* node = temp->head;
-        int dest;
-        int weight;
         while (node != NULL)
         {
-            dest = node->idx;
-            weight = node->weight;
+            int dest = node->idx;
+            int weight = node->weight;
 
             if (visited[dest] == 0 && weight < weights[dest])
             {
@@ -668,14 +694,7 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
             node = node->next_node;
         }
 
-        //find right vertex
-        temp = graph;
-        while (temp->idx != sources[min_idx])
-        {
-            temp = temp->next_vertex;
-        }
-        node = temp->head;
-
+        //fill MST_Edge
         struct MST_Edge* curr_mst = &mst[visited_count];
         if (min_idx == 0)
         {
@@ -685,19 +704,18 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
         }
         else
         {
-            //find right node
-            while (node->idx != min_idx)
-            {
-                node = node->next_node;
-            }
+            temp = graph;
+            temp = find_vertex(temp, sources[min_idx]);
+            node = temp->head;
+            node = find_node(node, min_idx);
+
             curr_mst->src = temp->idx;
             curr_mst->dest = node->idx;
             curr_mst->weight = node->weight;
         }
         print_visited(curr_mst->src, curr_mst->dest, curr_mst->weight);
-        visited_count++;
 
-        current_vertex = current_vertex->next_vertex;
+    
     }
     free(sources);
     free(weights);
