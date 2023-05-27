@@ -1,4 +1,3 @@
-//FREE GRAPH!!!!!!!!!!!
 #include<stdio.h>
 #include<stdlib.h>
 #include<windows.h>
@@ -31,7 +30,7 @@ int edges_num(double** symmetric_matrix);
 struct Graph* createGraph(double** A, double** W, int edges_num);
 void src_dest_weight(int i, double** A, double** W, int* src, int* dest, int* weight);
 int idx_of_min(int* weights, int* visited);
-void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W);
+void find_mst(struct Graph* graph, struct MST_Edge* mst);
 void print_visited(int src, int dest, float weight);
 void draw_mst(int n_tree, struct MST_Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc);
 
@@ -52,7 +51,7 @@ struct Graph
 
 struct Node
 {
-    struct Node* dest;
+    int idx;
     double weight;
     struct Node* next_node;
 };
@@ -564,7 +563,7 @@ struct Graph* createGraph(double** A, double** W, int edges_num)
         }
 
         struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
-        new_node->dest = dest;
+        new_node->idx = dest;
         new_node->weight = weight;
         new_node->next_node = current_vertex_src->head;
         current_vertex_src->head = new_node;
@@ -578,7 +577,7 @@ struct Graph* createGraph(double** A, double** W, int edges_num)
                 current_vertex_dest = current_vertex_dest->next_vertex;
             }
             new_node = (struct Node*)malloc(sizeof(struct Node));
-            new_node->dest = src;
+            new_node->idx = src;
             new_node->weight = weight;
             new_node->next_node = current_vertex_dest->head;
             current_vertex_dest->head = new_node;
@@ -625,7 +624,7 @@ int idx_of_min(int* weights, int* visited)
     return min_idx;
 }
 
-void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W)
+void find_mst(struct Graph* graph, struct MST_Edge* mst)
 {
     int* sources = (int*)malloc(vertices * sizeof(int));
     int* weights = (int*)malloc(vertices * sizeof(int));
@@ -640,32 +639,25 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W)
 
     weights[0] = 0;
     int visited_count = 0;
-    struct Graph* current_vertex = graph;
 
+    struct Graph* current_vertex = graph;
     while (current_vertex != NULL)
     {
         int min_idx = idx_of_min(weights, visited);
         visited[min_idx] = 1;
+
+        //find right vertex
         struct Graph* temp = graph;
         while (temp->idx != min_idx)
         {
             temp = temp->next_vertex;
         }
-
-        struct MST_Edge* p_curr_mst = &mst[visited_count];
-
-        p_curr_mst->dest = min_idx;
-        p_curr_mst->src = sources[min_idx];
-        p_curr_mst->weight = W[sources[min_idx]][min_idx];
-        print_visited(p_curr_mst->src, p_curr_mst->dest, p_curr_mst->src);
-        visited_count++;
-
         struct Node* node = temp->head;
         int dest;
         int weight;
         while (node != NULL)
         {
-            dest = node->dest;
+            dest = node->idx;
             weight = node->weight;
 
             if (visited[dest] == 0 && weight < weights[dest])
@@ -675,6 +667,36 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W)
             }
             node = node->next_node;
         }
+
+        //find right vertex
+        temp = graph;
+        while (temp->idx != sources[min_idx])
+        {
+            temp = temp->next_vertex;
+        }
+        node = temp->head;
+
+        struct MST_Edge* curr_mst = &mst[visited_count];
+        if (min_idx == 0)
+        {
+            curr_mst->src = 0;
+            curr_mst->dest = 0;
+            curr_mst->weight = 0;
+        }
+        else
+        {
+            //find right node
+            while (node->idx != min_idx)
+            {
+                node = node->next_node;
+            }
+            curr_mst->src = temp->idx;
+            curr_mst->dest = node->idx;
+            curr_mst->weight = node->weight;
+        }
+        print_visited(curr_mst->src, curr_mst->dest, curr_mst->weight);
+        visited_count++;
+
         current_vertex = current_vertex->next_vertex;
     }
     free(sources);
@@ -685,7 +707,7 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst, double** W)
 void print_visited(int src, int dest, float weight)
 {
     wchar_t buffer[32];
-    swprintf(buffer, 32, L"%d - %d \t%lf \n", (src + 1), (dest + 1), weight);
+    swprintf(buffer, 32, L"%d - %d \t%lf \n", src + 1, dest + 1, weight);
     OutputDebugString(buffer);
 }
 
