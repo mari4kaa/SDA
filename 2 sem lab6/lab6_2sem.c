@@ -33,7 +33,7 @@ struct Graph* find_vertex(struct Graph* start, int idx);
 struct Node* find_node(struct Node* node, int node_idx);
 void free_graph(struct Graph* graph);
 int idx_of_min(double* weights, int* visited);
-void find_mst(struct Graph* graph, struct MST_Edge* mst);
+void find_mst(int rand_vertex, struct Graph* graph, struct MST_Edge* mst);
 void print_visited(int src, int dest, double weight);
 void draw_mst(int n_tree, struct MST_Edge* mst, struct coords coords, double vertex_rad, double dtx, HDC hdc);
 
@@ -219,7 +219,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 
         //MST (Prim's tree)
         struct MST_Edge* mst = (struct MST_Edge*)malloc(vertices * sizeof(struct MST_Edge));
-        find_mst(graph, mst);
+        int rand_vertex = (double)rand() / (double)RAND_MAX * (vertices - 1);
+        find_mst(rand_vertex, graph, mst);
 
         //draw mst
         SelectObject(hdc, GetStockObject(DC_BRUSH));
@@ -665,7 +666,7 @@ int idx_of_min(double* weights, int* visited)
     return min_idx;
 }
 
-void find_mst(struct Graph* graph, struct MST_Edge* mst)
+void find_mst(int rand_vertex, struct Graph* graph, struct MST_Edge* mst)
 {
     int* sources = (int*)malloc(vertices * sizeof(int));
     double* weights = (double*)malloc(vertices * sizeof(double));
@@ -678,7 +679,7 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
         visited[i] = 0;
     }
 
-    weights[0] = 0;
+    weights[rand_vertex] = 0;
 
     for(int visited_count = 0; visited_count < vertices; visited_count++)
     {
@@ -703,10 +704,10 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
 
         //fill MST_Edge
         struct MST_Edge* curr_mst = &mst[visited_count];
-        if (min_idx == 0)
+        if (min_idx == rand_vertex)
         {
-            curr_mst->src = 0;
-            curr_mst->dest = 0;
+            curr_mst->src = rand_vertex;
+            curr_mst->dest = rand_vertex;
             curr_mst->weight = 0;
         }
         else
