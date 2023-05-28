@@ -88,8 +88,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     }
     HWND hWnd;
     MSG lpMsg;
-    hWnd = CreateWindow(L"Lab 5",
-        L"Lab 5. Made by Mariia Kryvokhata",
+    hWnd = CreateWindow(L"Lab 6",
+        L"Lab 6. Made by Mariia Kryvokhata",
         WS_OVERLAPPEDWINDOW,
         100,
         100,
