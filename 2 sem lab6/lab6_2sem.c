@@ -7,8 +7,8 @@
 #define vertices 11
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A, double** W,
-    HPEN PPen, HDC hdc);
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, int dtx, struct Graph* graph, struct coords coords,
+    HPEN PPen, HPEN BPen, HDC hdc);
 void print_matrix(double** matrix, int rows, int columns, int startX, int startY, HDC hdc);
 
 double** init_double_matrix(int rows, int columns);
@@ -206,30 +206,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
         TextOut(hdc, startX_rm, startY_rm, L"Random matrix", 13);
         print_matrix(A, vertices, vertices, startX_rm, startY_rm, hdc);
 
-        TextOut(hdc, startX_rm, startY_rm + 200, L"Weight", 6);
+        TextOut(hdc, startX_rm, startY_rm + 200, L"Weights", 6);
         print_matrix(W, vertices, vertices, startX_rm, startY_rm + 200, hdc);
+
+        //CREATE GRAPH
+        int e_num = edges_num(A);
+        struct Graph* graph = createGraph(A, W, e_num);
 
         //DRAW GRAPH
         SetBkMode(hdc, TRANSPARENT);
-        draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, coords, A, W, PPen, hdc);
-
-        //draw vertices
-        SelectObject(hdc, BPen);
-        SelectObject(hdc, GetStockObject(DC_BRUSH));
-        SetDCBrushColor(hdc, RGB(204, 204, 255));
-        for (int i = 0; i < vertices; i++) {
-            Ellipse(hdc, coords.nx[i] - vertex_rad, coords.ny[i] - vertex_rad, coords.nx[i] + vertex_rad, coords.ny[i] + vertex_rad);
-            wchar_t buffer[5];
-            swprintf(buffer, 5, L"%d", i + 1);
-            TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
-        }
+        draw_undirectgraph(centerX, centerY, rad, vertex_rad, loop_rad, dtx, graph, coords, PPen, BPen, hdc);
 
         //MST (Prim's tree)
-        int e_num = edges_num(A);
-        struct Graph* graph = createGraph(A, W, e_num);
         struct MST_Edge* mst = (struct MST_Edge*)malloc(vertices * sizeof(struct MST_Edge));
         find_mst(graph, mst);
 
+        //draw mst
         SelectObject(hdc, GetStockObject(DC_BRUSH));
         SetDCBrushColor(hdc, RGB(219, 150, 150));
         SelectObject(hdc, RPen);
@@ -263,47 +255,62 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, struct coords coords, double** A, double** W,
-    HPEN PPen, HDC hdc)
+void draw_undirectgraph(int centerX, int centerY, int rad, int vertex_rad, int loop_rad, int dtx, struct Graph* graph, struct coords coords,
+    HPEN PPen, HPEN BPen, HDC hdc)
 {
     int R = 12;
     int G = 7;
     int B = 3;
-    for (int i = 0; i < vertices; i++)
+    while(graph != NULL)
     {
-        for (int j = 0; j < vertices; j++)
+        struct Node* node = graph->head;
+        while (node != NULL)
         {
-            MoveToEx(hdc, coords.nx[i], coords.ny[i], NULL);
-            if (A[i][j] == 1)
+            int src = graph->idx;
+            int dest = node->idx;
+            MoveToEx(hdc, coords.nx[src], coords.ny[src], NULL);
+            R += 10;
+            G += 7;
+            B += 15;
+            HPEN ChangePen = CreatePen(PS_SOLID, 2, RGB(R, G, B));
+            SelectObject(hdc, ChangePen);
+            if (src == dest)
             {
-                R += 10;
-                G += 7;
-                B += 15;
-                HPEN ChangePen = CreatePen(PS_SOLID, 2, RGB(R, G, B));
+                //draw loops
+                SelectObject(hdc, PPen);
+                Ellipse(hdc, coords.loop_X[src] - loop_rad, coords.loop_Y[src] - loop_rad, coords.loop_X[src] + loop_rad, coords.loop_Y[src] + loop_rad);
                 SelectObject(hdc, ChangePen);
-                if (i == j)
-                {
-                    //draw loops
-                    SelectObject(hdc, PPen);
-                    Ellipse(hdc, coords.loop_X[i] - loop_rad, coords.loop_Y[i] - loop_rad, coords.loop_X[i] + loop_rad, coords.loop_Y[i] + loop_rad);
-                    SelectObject(hdc, ChangePen);
-                }
-                else
-                {
-                    LineTo(hdc, coords.nx[j], coords.ny[j]);
-
-                    double x = fabs(coords.nx[i] + coords.nx[j]) / 2.;
-                    double y = fabs(coords.ny[i] + coords.ny[j]) / 2.;
-                    double text_align = 10;
-                    double highlight_rad = 15;
-                    SetDCBrushColor(hdc, RGB(R, G, B));
-                    Ellipse(hdc, x - highlight_rad, y - highlight_rad, x + highlight_rad, y + highlight_rad);
-                    wchar_t buffer[10];
-                    swprintf(buffer, 5, L"%lf", W[i][j]);
-                    TextOut(hdc, x - text_align, y - text_align, buffer, 3);
-                }
             }
+            else
+            {
+                //draw line
+                LineTo(hdc, coords.nx[dest], coords.ny[dest]);
+
+                //draw weights
+                double x = fabs(coords.nx[src] + coords.nx[dest]) / 2.;
+                double y = fabs(coords.ny[src] + coords.ny[dest]) / 2.;
+                double text_align = 10;
+                double highlight_rad = 15;
+                SetDCBrushColor(hdc, RGB(R, G, B));
+                Ellipse(hdc, x - highlight_rad, y - highlight_rad, x + highlight_rad, y + highlight_rad);
+                wchar_t buffer[10];
+                swprintf(buffer, 5, L"%lf", node->weight);
+                TextOut(hdc, x - text_align, y - text_align, buffer, 3);
+            }
+            node = node->next_node;
         }
+        graph = graph->next_vertex;
+    }
+
+    //draw vertices
+    SelectObject(hdc, BPen);
+    SelectObject(hdc, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(hdc, RGB(204, 204, 255));
+    for (int i = 0; i < vertices; i++) {
+        Ellipse(hdc, coords.nx[i] - vertex_rad, coords.ny[i] - vertex_rad, coords.nx[i] + vertex_rad, coords.ny[i] + vertex_rad);
+        wchar_t buffer[5];
+        swprintf(buffer, 5, L"%d", i + 1);
+        TextOut(hdc, coords.nx[i] - dtx, coords.ny[i] - vertex_rad / 2, buffer, 2);
     }
 }
 
@@ -714,8 +721,6 @@ void find_mst(struct Graph* graph, struct MST_Edge* mst)
             curr_mst->weight = node->weight;
         }
         print_visited(curr_mst->src, curr_mst->dest, curr_mst->weight);
-
-    
     }
     free(sources);
     free(weights);
