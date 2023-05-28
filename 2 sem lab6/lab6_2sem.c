@@ -72,7 +72,7 @@ int n_tree = 0;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
     WNDCLASS w;
-    w.lpszClassName = L"Lab 5";
+    w.lpszClassName = L"Lab 6";
     w.hInstance = hInstance;
     w.lpfnWndProc = WndProc;
     w.hCursor = LoadCursor(NULL, IDC_ARROW);
